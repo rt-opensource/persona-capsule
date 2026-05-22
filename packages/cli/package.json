@@ -1,0 +1,13 @@
+{
+  "name": "persona-capsule",
+  "version": "0.1.0",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "persona": "./src/persona-capsule.js",
+    "persona-capsule": "./src/persona-capsule.js"
+  },
+  "dependencies": {
+    "@persona-capsule/core": "workspace:*"
+  }
+}

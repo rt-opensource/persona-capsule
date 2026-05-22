@@ -1,0 +1,19 @@
+{
+  "name": "persona-capsule-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "persona": "node packages/cli/src/persona-capsule.js",
+    "doctor": "node packages/cli/src/persona-capsule.js doctor",
+    "test": "node --test"
+  }
+}
