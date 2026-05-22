@@ -70,3 +70,225 @@ test("ingest indexes source files", async () => {
   assert.equal(index.sources[0].type, "markdown");
   assert.equal(index.sources[0].status, "indexed");
 });
+
+test("validate accepts a freshly initialized capsule", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "persona-capsule-"));
+  const target = path.join(root, "capsule");
+
+  const initResult = spawnSync(process.execPath, [CLI_PATH, "init", target], {
+    cwd: path.resolve("."),
+    encoding: "utf8"
+  });
+  assert.equal(initResult.status, 0, initResult.stderr);
+
+  const validateResult = spawnSync(process.execPath, [CLI_PATH, "validate", target], {
+    cwd: path.resolve("."),
+    encoding: "utf8"
+  });
+
+  assert.equal(validateResult.status, 0, validateResult.stderr);
+  assert.match(validateResult.stdout, /Validation passed/);
+});
+
+test("validate reports readable capsule manifest errors", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "persona-capsule-"));
+  const target = path.join(root, "capsule");
+
+  const initResult = spawnSync(process.execPath, [CLI_PATH, "init", target], {
+    cwd: path.resolve("."),
+    encoding: "utf8"
+  });
+  assert.equal(initResult.status, 0, initResult.stderr);
+
+  await fs.writeFile(
+    path.join(target, "capsule.yaml"),
+    `id: Invalid ID
+version: 0.1.0
+mode: haunted
+subject:
+  description: "missing display name"
+consent:
+  status: unverified
+export_targets:
+  - codex
+  - codex
+  - unknown-runtime
+`
+  );
+
+  const validateResult = spawnSync(process.execPath, [CLI_PATH, "validate", target], {
+    cwd: path.resolve("."),
+    encoding: "utf8"
+  });
+
+  assert.notEqual(validateResult.status, 0);
+  assert.match(validateResult.stderr, /capsule\.yaml/);
+  assert.match(validateResult.stderr, /id must match/);
+  assert.match(validateResult.stderr, /mode must be one of/);
+  assert.match(validateResult.stderr, /subject\.display_name is required/);
+  assert.match(validateResult.stderr, /consent\.status must be one of/);
+  assert.match(validateResult.stderr, /export_targets\[1\] duplicates codex/);
+  assert.match(validateResult.stderr, /export_targets\[2\] must be one of/);
+});
+
+test("validate reports readable source index errors", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "persona-capsule-"));
+  const target = path.join(root, "capsule");
+
+  const initResult = spawnSync(process.execPath, [CLI_PATH, "init", target], {
+    cwd: path.resolve("."),
+    encoding: "utf8"
+  });
+  assert.equal(initResult.status, 0, initResult.stderr);
+
+  await fs.writeFile(
+    path.join(target, "evidence", "source-index.json"),
+    `${JSON.stringify({ sources: [{ id: "src_bad", path: "sources/bad.md" }] }, null, 2)}\n`
+  );
+
+  const validateResult = spawnSync(process.execPath, [CLI_PATH, "validate", target], {
+    cwd: path.resolve("."),
+    encoding: "utf8"
+  });
+
+  assert.notEqual(validateResult.status, 0);
+  assert.match(validateResult.stderr, /source-index\.json/);
+  assert.match(validateResult.stderr, /sources\[0\]\.hash is required/);
+  assert.match(validateResult.stderr, /sources\[0\]\.type is required/);
+});
+
+test("validate reports indexed source files that changed after ingest", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "persona-capsule-"));
+  const target = path.join(root, "capsule");
+  const sourcePath = path.join(target, "sources", "journal.md");
+
+  const initResult = spawnSync(process.execPath, [CLI_PATH, "init", target], {
+    cwd: path.resolve("."),
+    encoding: "utf8"
+  });
+  assert.equal(initResult.status, 0, initResult.stderr);
+
+  await fs.writeFile(sourcePath, "Tea is my steady morning ritual.\n");
+
+  const ingestResult = spawnSync(process.execPath, [CLI_PATH, "ingest", target, sourcePath], {
+    cwd: path.resolve("."),
+    encoding: "utf8"
+  });
+  assert.equal(ingestResult.status, 0, ingestResult.stderr);
+
+  await fs.writeFile(sourcePath, "Coffee replaced the tea ritual.\n");
+
+  const validateResult = spawnSync(process.execPath, [CLI_PATH, "validate", target], {
+    cwd: path.resolve("."),
+    encoding: "utf8"
+  });
+
+  assert.notEqual(validateResult.status, 0);
+  assert.match(validateResult.stderr, /source content hash does not match index/);
+});
+
+test("validate reports indexed source files that are missing", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "persona-capsule-"));
+  const target = path.join(root, "capsule");
+  const sourcePath = path.join(target, "sources", "journal.md");
+
+  const initResult = spawnSync(process.execPath, [CLI_PATH, "init", target], {
+    cwd: path.resolve("."),
+    encoding: "utf8"
+  });
+  assert.equal(initResult.status, 0, initResult.stderr);
+
+  await fs.writeFile(sourcePath, "Tea is my steady morning ritual.\n");
+
+  const ingestResult = spawnSync(process.execPath, [CLI_PATH, "ingest", target, sourcePath], {
+    cwd: path.resolve("."),
+    encoding: "utf8"
+  });
+  assert.equal(ingestResult.status, 0, ingestResult.stderr);
+
+  await fs.unlink(sourcePath);
+
+  const validateResult = spawnSync(process.execPath, [CLI_PATH, "validate", target], {
+    cwd: path.resolve("."),
+    encoding: "utf8"
+  });
+
+  assert.notEqual(validateResult.status, 0);
+  assert.match(validateResult.stderr, /indexed source file is missing/);
+});
+
+test("validate reports claims without source references", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "persona-capsule-"));
+  const target = path.join(root, "capsule");
+
+  const initResult = spawnSync(process.execPath, [CLI_PATH, "init", target], {
+    cwd: path.resolve("."),
+    encoding: "utf8"
+  });
+  assert.equal(initResult.status, 0, initResult.stderr);
+
+  await fs.writeFile(
+    path.join(target, "evidence", "claims.jsonl"),
+    `${JSON.stringify({
+      id: "claim_tea",
+      type: "preference",
+      text: "The persona prefers tea.",
+      confidence: "verified",
+      source_ids: [],
+      created_at: "2026-05-22T00:00:00.000Z"
+    })}\n`
+  );
+
+  const validateResult = spawnSync(process.execPath, [CLI_PATH, "validate", target], {
+    cwd: path.resolve("."),
+    encoding: "utf8"
+  });
+
+  assert.notEqual(validateResult.status, 0);
+  assert.match(validateResult.stderr, /claims\.jsonl:1/);
+  assert.match(validateResult.stderr, /source_ids must contain at least one source id/);
+});
+
+test("validate accepts claims that reference indexed sources", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "persona-capsule-"));
+  const target = path.join(root, "capsule");
+  const sourcePath = path.join(target, "sources", "journal.md");
+
+  const initResult = spawnSync(process.execPath, [CLI_PATH, "init", target], {
+    cwd: path.resolve("."),
+    encoding: "utf8"
+  });
+  assert.equal(initResult.status, 0, initResult.stderr);
+
+  await fs.writeFile(sourcePath, "Tea is my steady morning ritual.\n");
+
+  const ingestResult = spawnSync(process.execPath, [CLI_PATH, "ingest", target, sourcePath], {
+    cwd: path.resolve("."),
+    encoding: "utf8"
+  });
+  assert.equal(ingestResult.status, 0, ingestResult.stderr);
+
+  const rawIndex = await fs.readFile(path.join(target, "evidence", "source-index.json"), "utf8");
+  const sourceId = JSON.parse(rawIndex).sources[0].id;
+
+  await fs.writeFile(
+    path.join(target, "evidence", "claims.jsonl"),
+    `${JSON.stringify({
+      id: "claim_tea",
+      type: "preference",
+      text: "The persona treats tea as a morning ritual.",
+      confidence: "verified",
+      source_ids: [sourceId],
+      evidence: [{ source_id: sourceId, quote: "Tea is my steady morning ritual.", location: "line 1" }],
+      created_at: "2026-05-22T00:00:00.000Z"
+    })}\n`
+  );
+
+  const validateResult = spawnSync(process.execPath, [CLI_PATH, "validate", target], {
+    cwd: path.resolve("."),
+    encoding: "utf8"
+  });
+
+  assert.equal(validateResult.status, 0, validateResult.stderr);
+  assert.match(validateResult.stdout, /Validation passed/);
+});

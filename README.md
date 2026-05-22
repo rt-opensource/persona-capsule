@@ -12,18 +12,23 @@ This repository is in the architecture and scaffold phase. It is not a complete 
 
 Implemented now:
 
-- CLI scaffold with `init`, `ingest`, `doctor`, and `help`.
+- CLI scaffold with `init`, `ingest`, `extract`, `distill`, `validate`, `eval`, `export`, `doctor`, and `help`.
 - Portable capsule template.
 - Source indexing into `evidence/source-index.json`.
-- Initial capsule manifest schema.
+- Deterministic offline claim extraction from annotated source blocks.
+- Deterministic distill proposal generation from claims.
+- Offline known-answer and boundary eval runner.
+- Deterministic Hermes, OpenClaw, Codex, Claude Code, and OpenHands runtime exports.
+- Golden manifest tests for adapter export shapes.
+- Initial capsule, source-index, claim, and known-answer eval schemas.
+- Offline synthetic fixture capsule.
 - Architecture, roadmap, usage, and positioning documents.
 
 Planned next:
 
-- Claim extraction.
-- Persona distillation.
-- Runtime exporters.
-- Eval runner.
+- Model-assisted claim extraction.
+- Model-assisted distillation refinements.
+- Runtime feedback loop.
 - Optional web studio.
 
 ## Quick Start
@@ -31,6 +36,7 @@ Planned next:
 ```bash
 npm run persona -- init ./my-persona
 npm run persona -- ingest ./my-persona ./my-persona/sources
+npm run persona -- validate ./my-persona
 npm run doctor
 npm test
 ```
@@ -78,9 +84,14 @@ docs/
   positioning.zh-CN.md
 schemas/
   capsule.schema.json
+  claim.schema.json
+  known-answer-test.schema.json
+  source-index.schema.json
+examples/
+  synthetic-self-continuity/
 ```
 
-Future packages will add adapter-specific exporters, eval runners, and an optional web studio.
+Future packages will add runtime feedback tools, richer eval runners, and an optional web studio.
 
 ## Design Principles
 

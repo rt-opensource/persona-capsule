@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://persona-capsule.dev/schemas/known-answer-test.schema.json",
+  "title": "Persona Capsule Known-Answer Eval Test",
+  "type": "object",
+  "required": ["id", "prompt", "must_include", "must_not_include"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^eval_[a-zA-Z0-9_-]+$"
+    },
+    "prompt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "must_include": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "must_not_include": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "additionalProperties": true
+}

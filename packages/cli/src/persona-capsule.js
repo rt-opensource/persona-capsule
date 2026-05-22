@@ -3,9 +3,32 @@ import fs from "node:fs/promises";
 import crypto from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { CAPSULE_DIRECTORIES, CAPSULE_FILES } from "../../core/src/index.js";
+import {
+  buildClaudeCodeExport,
+  buildCodexExport,
+  buildDistillProposals,
+  buildHermesExport,
+  buildOpenClawExport,
+  buildOpenHandsExport,
+  CAPSULE_DIRECTORIES,
+  CAPSULE_FILES,
+  extractClaimsFromIndexedSources,
+  formatClaimsJsonl,
+  parseCapsuleManifest,
+  runCapsuleEval,
+  validateCapsuleManifest,
+  validateClaimsJsonl,
+  validateSourceIndex
+} from "../../core/src/index.js";
 
 const [, , command, ...args] = process.argv;
+const EXPORT_BUILDERS = {
+  "claude-code": buildClaudeCodeExport,
+  codex: buildCodexExport,
+  hermes: buildHermesExport,
+  openclaw: buildOpenClawExport,
+  openhands: buildOpenHandsExport
+};
 
 async function main() {
   switch (command) {
@@ -14,6 +37,21 @@ async function main() {
       break;
     case "ingest":
       await ingestSources(args);
+      break;
+    case "extract":
+      await extractClaims(args[0] ?? ".");
+      break;
+    case "distill":
+      await distillClaims(args[0] ?? ".");
+      break;
+    case "export":
+      await exportCapsule(args);
+      break;
+    case "eval":
+      await evalCapsule(args[0] ?? ".");
+      break;
+    case "validate":
+      await validateCapsule(args[0] ?? ".");
       break;
     case "doctor":
       doctor();
@@ -82,6 +120,297 @@ async function ingestSources(args) {
   console.log(`Indexed ${added.length} source file${added.length === 1 ? "" : "s"} in ${indexPath}`);
 }
 
+async function extractClaims(capsuleArg) {
+  const capsuleRoot = path.resolve(process.cwd(), capsuleArg);
+  await assertCapsuleExists(capsuleRoot);
+
+  const errors = [];
+  const sourceIndexPath = path.join(capsuleRoot, "evidence", "source-index.json");
+  const claimsPath = path.join(capsuleRoot, "evidence", "claims.jsonl");
+  const sourceIndex = await readJsonForValidation(sourceIndexPath, "evidence/source-index.json", errors);
+
+  if (!sourceIndex) {
+    return failWithErrors(errors);
+  }
+
+  for (const error of validateSourceIndex(sourceIndex)) {
+    errors.push(`evidence/source-index.json: ${error}`);
+  }
+  errors.push(...await validateIndexedSourceFiles(capsuleRoot, sourceIndex));
+
+  if (errors.length > 0) {
+    return failWithErrors(errors);
+  }
+
+  const sourceDocuments = [];
+  for (const source of sourceIndex.sources.filter(isCheckableIndexedSource)) {
+    sourceDocuments.push({
+      source,
+      text: await fs.readFile(path.join(capsuleRoot, source.path), "utf8")
+    });
+  }
+
+  const { claims, errors: extractErrors } = extractClaimsFromIndexedSources(sourceDocuments);
+  errors.push(...extractErrors);
+  errors.push(...validateClaimsJsonl(formatClaimsJsonl(claims), sourceIndex.sources.map((source) => source.id)));
+
+  if (errors.length > 0) {
+    return failWithErrors(errors);
+  }
+
+  await fs.writeFile(claimsPath, formatClaimsJsonl(claims));
+  console.log(`Extracted ${claims.length} claim${claims.length === 1 ? "" : "s"} into ${claimsPath}`);
+}
+
+async function distillClaims(capsuleArg) {
+  const capsuleRoot = path.resolve(process.cwd(), capsuleArg);
+  await assertCapsuleExists(capsuleRoot);
+
+  const errors = [];
+  const sourceIndexPath = path.join(capsuleRoot, "evidence", "source-index.json");
+  const claimsPath = path.join(capsuleRoot, "evidence", "claims.jsonl");
+  const sourceIndex = await readJsonForValidation(sourceIndexPath, "evidence/source-index.json", errors);
+  const rawClaims = await readTextForValidation(claimsPath, "evidence/claims.jsonl", errors);
+
+  if (!sourceIndex || rawClaims === undefined) {
+    return failWithErrors(errors);
+  }
+
+  for (const error of validateSourceIndex(sourceIndex)) {
+    errors.push(`evidence/source-index.json: ${error}`);
+  }
+  errors.push(...validateClaimsJsonl(rawClaims, sourceIndex.sources.map((source) => source.id)));
+
+  if (errors.length > 0) {
+    return failWithErrors(errors);
+  }
+
+  const claims = parseClaimsJsonl(rawClaims);
+  const proposals = buildDistillProposals(claims);
+  const proposalRoot = path.join(capsuleRoot, "proposals", "distill");
+  await fs.mkdir(proposalRoot, { recursive: true });
+
+  for (const [fileName, contents] of Object.entries(proposals)) {
+    await fs.writeFile(path.join(proposalRoot, fileName), contents);
+  }
+
+  console.log(`Wrote ${Object.keys(proposals).length} distill proposals into ${proposalRoot}`);
+}
+
+async function exportCapsule(args) {
+  const [capsuleArg, target] = args;
+  if (!capsuleArg || !target) {
+    return failWithErrors(["export requires a capsule directory and target"]);
+  }
+
+  if (!EXPORT_BUILDERS[target]) {
+    return failWithErrors([`Unsupported export target: ${target}`]);
+  }
+
+  const capsuleRoot = path.resolve(process.cwd(), capsuleArg);
+  await assertCapsuleExists(capsuleRoot);
+
+  const errors = [];
+  const rawManifest = await readTextForValidation(path.join(capsuleRoot, "capsule.yaml"), "capsule.yaml", errors);
+  const sourceIndex = await readJsonForValidation(path.join(capsuleRoot, "evidence", "source-index.json"), "evidence/source-index.json", errors);
+  const rawClaims = await readTextForValidation(path.join(capsuleRoot, "evidence", "claims.jsonl"), "evidence/claims.jsonl", errors);
+
+  if (rawManifest === undefined || !sourceIndex || rawClaims === undefined) {
+    return failWithErrors(errors);
+  }
+
+  const manifestResult = parseCapsuleManifest(rawManifest);
+  errors.push(...manifestResult.errors.map((error) => `capsule.yaml: ${error}`));
+  errors.push(...validateCapsuleManifest(rawManifest).map((error) => `capsule.yaml: ${error}`));
+  errors.push(...validateSourceIndex(sourceIndex).map((error) => `evidence/source-index.json: ${error}`));
+  errors.push(...validateClaimsJsonl(rawClaims, sourceIndex.sources.map((source) => source.id)));
+
+  if (errors.length > 0) {
+    return failWithErrors(errors);
+  }
+
+  const artifacts = {
+    SOUL: await fs.readFile(path.join(capsuleRoot, "SOUL.md"), "utf8"),
+    USER: await fs.readFile(path.join(capsuleRoot, "USER.md"), "utf8"),
+    MEMORY_POLICY: await fs.readFile(path.join(capsuleRoot, "MEMORY_POLICY.md"), "utf8"),
+    BOUNDARIES: await fs.readFile(path.join(capsuleRoot, "BOUNDARIES.md"), "utf8")
+  };
+  const claims = parseClaimsJsonl(rawClaims);
+  const exportInput = {
+    manifest: manifestResult.manifest,
+    artifacts,
+    claims,
+    rawClaims
+  };
+  const evalResult = await runEval(capsuleRoot, artifacts, rawClaims);
+  if (evalResult.boundaryFailures.length > 0) {
+    return failWithErrors(["Boundary eval failed before export.", ...evalResult.boundaryFailures]);
+  }
+
+  const files = EXPORT_BUILDERS[target](exportInput);
+
+  const exportRoot = path.join(capsuleRoot, "adapters", target);
+  await fs.mkdir(exportRoot, { recursive: true });
+  for (const [fileName, contents] of Object.entries(files)) {
+    const destination = path.join(exportRoot, fileName);
+    await fs.mkdir(path.dirname(destination), { recursive: true });
+    await fs.writeFile(destination, contents);
+  }
+
+  console.log(`Exported ${target} bundle into ${exportRoot}`);
+}
+
+async function evalCapsule(capsuleArg) {
+  const capsuleRoot = path.resolve(process.cwd(), capsuleArg);
+  await assertCapsuleExists(capsuleRoot);
+
+  const errors = [];
+  const rawClaims = await readTextForValidation(path.join(capsuleRoot, "evidence", "claims.jsonl"), "evidence/claims.jsonl", errors);
+  const artifacts = await readCanonicalArtifacts(capsuleRoot, errors);
+
+  if (rawClaims === undefined || !artifacts) {
+    return failWithErrors(errors);
+  }
+
+  const result = await runEval(capsuleRoot, artifacts, rawClaims);
+  await fs.writeFile(path.join(capsuleRoot, "eval", "machine-results.json"), `${JSON.stringify(result, null, 2)}\n`);
+
+  if (result.status !== "passed") {
+    return failWithErrors(result.errors);
+  }
+
+  console.log(`Eval passed: ${result.summary.total} known-answer tests, ${result.summary.boundary} boundary test${result.summary.boundary === 1 ? "" : "s"}`);
+}
+
+async function runEval(capsuleRoot, artifacts, rawClaims) {
+  const evalPath = path.join(capsuleRoot, "eval", "known-answer-tests.jsonl");
+  let rawKnownAnswerTests = "";
+  try {
+    rawKnownAnswerTests = await fs.readFile(evalPath, "utf8");
+  } catch (error) {
+    if (error.code !== "ENOENT") {
+      throw error;
+    }
+  }
+
+  return runCapsuleEval({
+    rawKnownAnswerTests,
+    corpus: [
+      artifacts.SOUL,
+      artifacts.USER,
+      artifacts.MEMORY_POLICY,
+      artifacts.BOUNDARIES,
+      rawClaims
+    ].join("\n\n")
+  });
+}
+
+async function validateCapsule(capsuleArg) {
+  const capsuleRoot = path.resolve(process.cwd(), capsuleArg);
+  await assertCapsuleExists(capsuleRoot);
+
+  const errors = [];
+  const manifestPath = path.join(capsuleRoot, "capsule.yaml");
+  const sourceIndexPath = path.join(capsuleRoot, "evidence", "source-index.json");
+  const claimsPath = path.join(capsuleRoot, "evidence", "claims.jsonl");
+  const rawManifest = await readTextForValidation(manifestPath, "capsule.yaml", errors);
+  if (rawManifest !== undefined) {
+    for (const error of validateCapsuleManifest(rawManifest)) {
+      errors.push(`capsule.yaml: ${error}`);
+    }
+  }
+
+  const sourceIndex = await readJsonForValidation(sourceIndexPath, "evidence/source-index.json", errors);
+
+  if (sourceIndex) {
+    for (const error of validateSourceIndex(sourceIndex)) {
+      errors.push(`evidence/source-index.json: ${error}`);
+    }
+
+    errors.push(...await validateIndexedSourceFiles(capsuleRoot, sourceIndex));
+  }
+
+  const sourceIds = sourceIndex?.sources?.map((source) => source.id) ?? [];
+  const rawClaims = await readTextForValidation(claimsPath, "evidence/claims.jsonl", errors);
+  if (rawClaims !== undefined) {
+    errors.push(...validateClaimsJsonl(rawClaims, sourceIds));
+  }
+
+  if (errors.length > 0) {
+    return failWithErrors(errors);
+  }
+
+  console.log(`Validation passed: ${capsuleRoot}`);
+}
+
+function failWithErrors(errors) {
+  for (const error of errors) {
+    console.error(error);
+  }
+  process.exitCode = 1;
+}
+
+async function readCanonicalArtifacts(capsuleRoot, errors) {
+  const artifactEntries = [
+    ["SOUL", "SOUL.md"],
+    ["USER", "USER.md"],
+    ["MEMORY_POLICY", "MEMORY_POLICY.md"],
+    ["BOUNDARIES", "BOUNDARIES.md"]
+  ];
+  const artifacts = {};
+
+  for (const [key, relativePath] of artifactEntries) {
+    const contents = await readTextForValidation(path.join(capsuleRoot, relativePath), relativePath, errors);
+    if (contents !== undefined) {
+      artifacts[key] = contents;
+    }
+  }
+
+  return Object.keys(artifacts).length === artifactEntries.length ? artifacts : undefined;
+}
+
+async function validateIndexedSourceFiles(capsuleRoot, sourceIndex) {
+  const errors = [];
+  if (!Array.isArray(sourceIndex.sources)) {
+    return errors;
+  }
+
+  for (const [sourcePosition, source] of sourceIndex.sources.entries()) {
+    if (!isCheckableIndexedSource(source)) {
+      continue;
+    }
+
+    const displayPath = `evidence/source-index.json: sources[${sourcePosition}]`;
+    const sourcePath = path.join(capsuleRoot, source.path);
+
+    try {
+      const buffer = await fs.readFile(sourcePath);
+      const hash = crypto.createHash("sha256").update(buffer).digest("hex");
+
+      if (buffer.byteLength !== source.bytes) {
+        errors.push(`${displayPath} source byte size does not match index`);
+      }
+
+      if (hash !== source.hash) {
+        errors.push(`${displayPath} source content hash does not match index`);
+      }
+    } catch (error) {
+      if (error.code === "ENOENT") {
+        errors.push(`${displayPath} indexed source file is missing`);
+        continue;
+      }
+
+      throw error;
+    }
+  }
+
+  return errors;
+}
+
+function isCheckableIndexedSource(source) {
+  return source?.status === "indexed" && typeof source.path === "string" && !source.path.startsWith("/") && !source.path.includes("..");
+}
+
 function parseIngestArgs(args) {
   const capsuleFlagIndex = args.indexOf("--capsule");
   if (capsuleFlagIndex >= 0) {
@@ -134,6 +463,44 @@ async function readSourceIndex(indexPath) {
     }
     throw error;
   }
+}
+
+async function readJsonForValidation(filePath, displayPath, errors) {
+  try {
+    return JSON.parse(await fs.readFile(filePath, "utf8"));
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      errors.push(`${displayPath} is required`);
+      return undefined;
+    }
+
+    if (error instanceof SyntaxError) {
+      errors.push(`${displayPath} must be valid JSON`);
+      return undefined;
+    }
+
+    throw error;
+  }
+}
+
+async function readTextForValidation(filePath, displayPath, errors) {
+  try {
+    return await fs.readFile(filePath, "utf8");
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      errors.push(`${displayPath} is required`);
+      return undefined;
+    }
+
+    throw error;
+  }
+}
+
+function parseClaimsJsonl(rawClaims) {
+  return rawClaims
+    .split(/\r?\n/)
+    .filter((line) => line.trim() !== "")
+    .map((line) => JSON.parse(line));
 }
 
 async function collectFiles(inputPath) {
@@ -256,6 +623,12 @@ Usage:
                               Index source files into evidence/source-index.json
   persona ingest <sources...> --capsule <capsule>
                               Same as above with an explicit capsule flag
+  persona extract <capsule>   Generate evidence/claims.jsonl from source claim blocks
+  persona distill <capsule>   Write proposal files from evidence/claims.jsonl
+  persona export <capsule> <target>
+                              Write a runtime bundle (claude-code, codex, hermes, openclaw, openhands)
+  persona eval <capsule>      Run offline known-answer and boundary eval checks
+  persona validate <capsule>  Validate source index and claims files
   persona doctor             Check local runtime requirements
   persona help               Show this help
 `);

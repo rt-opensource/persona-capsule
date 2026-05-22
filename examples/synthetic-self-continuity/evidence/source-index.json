@@ -1,0 +1,40 @@
+{
+  "sources": [
+    {
+      "id": "src_d108f5dd8d85",
+      "path": "sources/interviews/continuity-interview.md",
+      "type": "markdown",
+      "bytes": 1309,
+      "hash": "d108f5dd8d85451fa505eafe3b64e4542bf6a8f8588e26578300bdc8f2c01466",
+      "sensitivity": "public",
+      "owner": "self",
+      "imported_at": "2026-05-22T00:00:00.000Z",
+      "modified_at": "2026-05-22T00:00:00.000Z",
+      "status": "indexed"
+    },
+    {
+      "id": "src_6a7c666d60ae",
+      "path": "sources/journal/2026-05-01-morning.md",
+      "type": "markdown",
+      "bytes": 1596,
+      "hash": "6a7c666d60ae4f75018e63eb31b076633ae735b5e173d5a97f4d28a5a32c58e1",
+      "sensitivity": "public",
+      "owner": "self",
+      "imported_at": "2026-05-22T00:00:00.000Z",
+      "modified_at": "2026-05-22T00:00:00.000Z",
+      "status": "indexed"
+    },
+    {
+      "id": "src_97f2aca03a5d",
+      "path": "sources/manuals/operating-notes.md",
+      "type": "markdown",
+      "bytes": 1177,
+      "hash": "97f2aca03a5d361a32e60dafa12f850f5efda59288f91d9959185bc58f33d370",
+      "sensitivity": "public",
+      "owner": "self",
+      "imported_at": "2026-05-22T00:00:00.000Z",
+      "modified_at": "2026-05-22T00:00:00.000Z",
+      "status": "indexed"
+    }
+  ]
+}

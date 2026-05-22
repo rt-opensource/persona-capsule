@@ -1,0 +1,15 @@
+id: synthetic-self-continuity
+version: 0.2.0
+mode: self-continuity
+subject:
+  display_name: "Synthetic Continuity Persona"
+  description: "A fictional local-first developer persona used only for offline fixture tests."
+consent:
+  status: fictional
+  notes: "Synthetic fixture. No real personal data is included."
+export_targets:
+  - hermes
+  - openclaw
+  - codex
+  - claude-code
+  - openhands

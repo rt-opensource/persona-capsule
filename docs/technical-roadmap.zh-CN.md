@@ -195,21 +195,29 @@ examples/
 - claims format
 - offline fixture pipeline
 
+当前仓库状态：source indexing、source-index 和 claim schemas、`persona validate`、annotation-driven 离线 `persona extract`、synthetic self-continuity fixture 已实现。模型辅助 claim 抽取仍在计划中。
+
 ### v0.3
 
 - Hermes 和 OpenClaw exporters
 - synthetic example capsule
+
+当前仓库状态：Hermes 和 OpenClaw exports 已实现，并有 deterministic fixture 覆盖。
 
 ### v0.4
 
 - Codex、Claude Code、OpenHands exporters
 - adapter golden tests
 
+当前仓库状态：Codex、Claude Code、OpenHands exports 已实现，并有 deterministic fixture 覆盖。Golden-file adapter tests 已通过签入的 adapter export manifest 实现。
+
 ### v0.5
 
 - eval runner
 - boundary tests
 - blind-review forms
+
+当前仓库状态：offline known-answer 和 boundary evals 已实现。机器结果会写入 `eval/machine-results.json`，blind review notes 保持独立，boundary eval failures 默认阻断 exports。
 
 ### v1.0
 

@@ -121,3 +121,13 @@ Use this file to collect human review notes without exposing expected answers to
 export function listCapsuleFiles() {
   return Object.keys(CAPSULE_FILES);
 }
+
+export { buildDistillProposals } from "./distill.js";
+export { buildClaudeCodeExport } from "./export-claude-code.js";
+export { buildCodexExport } from "./export-codex.js";
+export { runCapsuleEval } from "./eval.js";
+export { extractClaimsFromIndexedSources, formatClaimsJsonl } from "./extract.js";
+export { buildHermesExport } from "./export-hermes.js";
+export { buildOpenClawExport } from "./export-openclaw.js";
+export { buildOpenHandsExport } from "./export-openhands.js";
+export { parseCapsuleManifest, validateCapsuleManifest, validateClaimsJsonl, validateSourceIndex } from "./validation.js";

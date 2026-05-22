@@ -1,0 +1,172 @@
+{
+  "hermes": [
+    {
+      "path": "BOUNDARIES.md",
+      "sha256": "4c88ef9e124c2c94c75a5f4ac1e71f13ff685d5e7b3ad982f343bfdd24506f5b"
+    },
+    {
+      "path": "claims.jsonl",
+      "sha256": "0ce8b4e8171562b70e9c5d0e767e801c7ac14f43de4c310cb92b18d986e9d0d7"
+    },
+    {
+      "path": "MEMORY_POLICY.md",
+      "sha256": "0ddb43381b218c35f9104c05096447d8c0d3a00267c7c6b4d5995821660e32d0"
+    },
+    {
+      "path": "profile.json",
+      "sha256": "2c76731782e13627065521fdef1e3b17d5c122a1a922a53fa31dfce0c22823d6"
+    },
+    {
+      "path": "README.md",
+      "sha256": "78cd265a0536917c4e479d1e367bb7274d482447771bf1a5c6e1f29af582a6c0"
+    },
+    {
+      "path": "SOUL.md",
+      "sha256": "8469de568b0bba01f8e0ad8347abb64940c584a6a7560bf8e8311cdabda0c3cb"
+    }
+  ],
+  "openclaw": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "fcc02a1068357d61950541422694537266ab3a539f6b263a80b6983a959e8c6a"
+    },
+    {
+      "path": "MEMORY.md",
+      "sha256": "666ba286688d6074c5fbca769f49037cf9c56c76705e8225334c113db90e1c84"
+    },
+    {
+      "path": "memory/claims.jsonl",
+      "sha256": "0ce8b4e8171562b70e9c5d0e767e801c7ac14f43de4c310cb92b18d986e9d0d7"
+    },
+    {
+      "path": "memory/README.md",
+      "sha256": "8cb2b231658a14d2af0859eadf10c8f80ef2964b8f6593920979aa49e6b8787b"
+    },
+    {
+      "path": "SOUL.md",
+      "sha256": "70eed20eac10a34b1202eece0c8742ac451022c3eedbfc04f5de43b2f745043f"
+    },
+    {
+      "path": "USER.md",
+      "sha256": "a0e649b9cae0d75dcd297ea1188a3f0f51c3fcd502ce0cd833d24d7a79dd76a4"
+    }
+  ],
+  "codex": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "50d3d08e28f1871b2e2be3c75650c0b1b619331e92b366a47bc7cc0a89d64a30"
+    },
+    {
+      "path": "BOUNDARIES.md",
+      "sha256": "9a15d00a47cce5b5c658be45dd08d86d0ada8193bccac3ce32083f991766d20c"
+    },
+    {
+      "path": "MEMORY_POLICY.md",
+      "sha256": "1c5a7dbb8acca89f711cc0ff3e77df0481d1936faf0efecc5a52e232a03f3cc3"
+    },
+    {
+      "path": "memory/claim-summary.md",
+      "sha256": "382ac17917cee4bd92c4385ed6bc81fdbb57efa36a4201fbe8698df352d1e961"
+    },
+    {
+      "path": "memory/claims.jsonl",
+      "sha256": "0ce8b4e8171562b70e9c5d0e767e801c7ac14f43de4c310cb92b18d986e9d0d7"
+    },
+    {
+      "path": "memory/README.md",
+      "sha256": "cd462c50aa9d49bbc49c6b88cab2b83a914b3801e0fa6f8755ed386fbd49fe0e"
+    },
+    {
+      "path": "skills/persona-continuity/SKILL.md",
+      "sha256": "37d5307af5eb78b2b464bf224fbaaf08de9996e87b851b0b8d7338e678e010ed"
+    },
+    {
+      "path": "SOUL.md",
+      "sha256": "6478ca967bfa9ed916b3d34e768269d3e4b0aea41c3c75d692deab58474cc9c3"
+    },
+    {
+      "path": "USER.md",
+      "sha256": "198812de7f7619e5322c9f892caeafdb09c3e57cf5a0fa34753cf08f47a12e06"
+    }
+  ],
+  "claude-code": [
+    {
+      "path": ".claude/rules/persona-continuity.md",
+      "sha256": "2e9ce9d9219221f50829b4ca8c59bbded431053613aa28aca8b8c36023f6ee19"
+    },
+    {
+      "path": "BOUNDARIES.md",
+      "sha256": "e76a4b9e8c5e8ca0a745001f6467dfb08dd90e3dd4abc9f90921d62e439544dd"
+    },
+    {
+      "path": "CLAUDE.md",
+      "sha256": "212625b23cbbc034d09efc539184cd273ab995be11f6f3697ade12bd58be1ab1"
+    },
+    {
+      "path": "MEMORY_POLICY.md",
+      "sha256": "a91b9bb79fd2a31489328560a5395e4a7527992932829e51423ae4c90004588d"
+    },
+    {
+      "path": "memory/claim-summary.md",
+      "sha256": "911c3d84f23a07e123d7710629f086c3b25f84b50c406769214e2dc64cdf48b7"
+    },
+    {
+      "path": "memory/claims.jsonl",
+      "sha256": "0ce8b4e8171562b70e9c5d0e767e801c7ac14f43de4c310cb92b18d986e9d0d7"
+    },
+    {
+      "path": "memory/README.md",
+      "sha256": "07c2126250c1dd675ecdd7ed20b160c86e68928b8440ad5d9682ad05da1e79ab"
+    },
+    {
+      "path": "SOUL.md",
+      "sha256": "79792a8ce684ba89f8fbe8a2f7a28c4e8063a6e90a6d3a72a6e0b7d4d51123e1"
+    },
+    {
+      "path": "USER.md",
+      "sha256": "9cbcba980d774413e3c3c4c0619d1629899c369b59ec2e531dc5faf42291a85e"
+    }
+  ],
+  "openhands": [
+    {
+      "path": ".agents/skills/persona-continuity/SKILL.md",
+      "sha256": "ae84b8913c5ef618ccd3cab64cd03e9385088fed4c85af83a02f618b05c62eb1"
+    },
+    {
+      "path": "AGENTS.md",
+      "sha256": "58c0b653edcdc97105fb75101a8bf07cfa1cc9585ed42742feed81980140263c"
+    },
+    {
+      "path": "BOUNDARIES.md",
+      "sha256": "ef9553df5e5dafea94cfaca2f30d4576379d64c48a5ce2f4272dd5e3bc7a837e"
+    },
+    {
+      "path": "eval/README.md",
+      "sha256": "292002447bdaf397f49c7ffb91bb2f658df5f84b217c01f54c122a97c35a7e86"
+    },
+    {
+      "path": "MEMORY_POLICY.md",
+      "sha256": "fc7f4bf432aebf1ca6174bbf5cca6600a635555c51bc3da60e3fc28ff7feb4d6"
+    },
+    {
+      "path": "memory/claim-summary.md",
+      "sha256": "eeb7808bcbe53924fe8cbcddb56c3532b4b1c9f067c49085672cc19786e1eb1e"
+    },
+    {
+      "path": "memory/claims.jsonl",
+      "sha256": "0ce8b4e8171562b70e9c5d0e767e801c7ac14f43de4c310cb92b18d986e9d0d7"
+    },
+    {
+      "path": "memory/README.md",
+      "sha256": "72f926c5fc1dda1ad7c30d06c48bcaa43153ec584881ef85e81562e1ff19a92c"
+    },
+    {
+      "path": "SOUL.md",
+      "sha256": "7e0bda42d60651674a1cbbe51b9760fe58ae15a926bf115a5d02f891b268c4f2"
+    },
+    {
+      "path": "USER.md",
+      "sha256": "b0868462a6e331d1a4a6303a81e1bdde7d371d7600515e396bc6d6bd6a3a948b"
+    }
+  ]
+}

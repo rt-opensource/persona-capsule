@@ -195,21 +195,29 @@ examples/
 - claims format
 - offline fixture pipeline
 
+Current repository status: source indexing, source-index and claim schemas, `persona validate`, annotation-driven offline `persona extract`, and the synthetic self-continuity fixture are implemented. Model-assisted claim extraction is still planned.
+
 ### v0.3
 
 - Hermes and OpenClaw exporters
 - synthetic example capsule
+
+Current repository status: Hermes and OpenClaw exports are implemented with deterministic fixture coverage.
 
 ### v0.4
 
 - Codex, Claude Code, and OpenHands exporters
 - adapter golden tests
 
+Current repository status: Codex, Claude Code, and OpenHands exports are implemented with deterministic fixture coverage. Golden-file adapter tests are implemented through a checked-in adapter export manifest.
+
 ### v0.5
 
 - eval runner
 - boundary tests
 - blind-review forms
+
+Current repository status: offline known-answer and boundary evals are implemented. Machine results are written to `eval/machine-results.json`, blind review notes remain separate, and boundary eval failures block exports by default.
 
 ### v1.0
 
